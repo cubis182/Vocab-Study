@@ -1,0 +1,1 @@
+[{"kind":1,"language":"markdown","value":"# XPath Notebook\nDate: 2025-10-09     Time: 21:30:49"},{"kind":2,"language":"xpath","value":"doc(\"dict.xml\")\n\n/root/*[@n='2']"}]

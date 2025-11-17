@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This is the structure of each node. There aren't any attributes, but only text values.
+ <root>
+    <entry>
+        <term></term>
+        <def></def>
+    </entry>
+</root>
+ Create a schema for this if you can-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="unqualified">
+    <xs:element name="root">
+        <xs:complexType>
+        <xs:choice>
+            <xs:element name="entry" maxOccurs="unbounded">
+            <xs:complexType>
+                <xs:all>
+                    
+                    <xs:element name="term" type="xs:string"/>
+                    <xs:element name="def" type="xs:string"/>
+                </xs:all>
+                 <xs:attribute name="creationDate" type="xs:date"/>
+                 <xs:attribute name="lastViewed" type="xs:date"/>
+                 <xs:attribute name="n" use="required"/>
+                 
+            </xs:complexType>
+        </xs:element>
+        </xs:choice>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
