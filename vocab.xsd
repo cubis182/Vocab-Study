@@ -21,6 +21,7 @@
                  <xs:attribute name="creationDate" type="xs:date"/>
                  <xs:attribute name="lastViewed" type="xs:date"/>
                  <xs:attribute name="n" use="required"/>
+                 <xs:attribute name="language" type="xs:language"/>
                  
             </xs:complexType>
         </xs:element>

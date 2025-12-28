@@ -5,6 +5,7 @@ from tkinter import messagebox
 from PIL import ImageTk, Image
 from PyDictionary import PyDictionary
 from googletrans import Translator
+from datetime import datetime
 #temp
 import os
 
@@ -21,6 +22,27 @@ sys.setrecursionlimit(3600*24)
 
 MAX_UNDO = 100 #max number of actions you can undo (+ 1 because I am lazy)
 SAVE_CHANGES_SHORTCUT = "<Mod1-Key-s>"
+UNSPECIFIED_LANG = "unspecif"
+
+#FILTERS
+"""
+To add a filter, you need to add a value at a correct key. 
+Below are valid keys with their accepted value in parentheses next to it.
+'in-term' (string)
+'in-def' (string)
+'before' (datetime)
+'after' (datetime)
+'language' (string)
+"""
+dictFilters = {} #Empty dictionary; we add filters by adding the correct keys
+
+#The supported languages. Customizing this would be ideal. 
+Languages = {
+      "Unspecified":"unspecif",
+      "Greek":"grc",
+      "Latin":"lat"
+}
+
 
 
 """
@@ -50,11 +72,14 @@ Ctrl + Z:
 - How many steps to save? Every call to update_listbox would have to save the current xmlRoot somewhere. I guess it would be easy
 - 
 
+Add images using the file browser to an entry - ESSENTIAL
+Add images to an entry using drag and drop - NICE TO HAVE
 Store the language of each entry - ESSENTIAL
 Optional "Are you sure you want to delete?" dialogue on deleting an entry
 Flashcard mode: opens up new window with just the word, based on the list in the current view mode (see below) - NICE TO HAVE
 Combo box toggles view modes - ESSENTIAL
 Each view mode has the ability to activate or deactivate certain buttons and features - ESSENTIAL
+Customizable fonts - NICE TO HAVE
 ESSENTIAL VIEW MODES:
 - View All
 - View by Date (comes with date range or single date option; also ascending / descending order option)
@@ -68,6 +93,7 @@ Don't bother to ask to save on quit if the data hasn't been changed - NON-ESSENT
 Have a way of showing shortcuts on buttons and tooltips - NON-ESSENTIAL
 Highlight required fields in some way - NICE TO HAVE
 Option to resize text - ESSENTIAL
+Customize the languages - NICE-TO-HAVE
 
 ONGOING ISSUES:
 How to handle when I change the XML and there are old versions left over? Let's say I add a language option, how will the program sort the entry if it has no language at all? 
@@ -171,15 +197,17 @@ Generate a new ID by finding the lowest available number, not the next highest, 
 
 Features:
 
+The language format used for the XML is a standard format - ESSENTIAL
+
 ESCAPE CHARACTERS:
 I investigated escape characters, and the XML library deals with the problem on its own.
 """
-def create_entry(term :str, definition :str, num) -> ET.Element:
+def create_entry(term :str, definition :str, num, lang=UNSPECIFIED_LANG) -> ET.Element:
     #Get today's date
     dateFormatted = date.today().isoformat() #Get the ISO format of the date, which is the default acceptable value
 
     #Create the entry element
-    entry = ET.Element("entry", creationDate=dateFormatted, n=str(num))
+    entry = ET.Element("entry", creationDate=dateFormatted, n=str(num), language=lang)
 
     print(entry.tag)
 
@@ -203,11 +231,9 @@ def create_entry(term :str, definition :str, num) -> ET.Element:
         
   
 root = tk.Tk()
-root.title('Dictionary')
+root.title('Subito')
 root.geometry('900x500')
 root['bg'] = 'white'
-frame = Frame(root,width=200,height=300,borderwidth=1,relief=RIDGE) 
-frame.grid(sticky="W") 
 
 DEBUG_MODE = tk.BooleanVar() #When true, extra debug features are enabled
 HIDE_TERMS = tk.BooleanVar() #When true, hide all the terms in the left column (terms)
@@ -233,6 +259,17 @@ if (DEBUG_MODE):
 eTree = ET.parse(dictFile)
 xmlRoot = eTree.getroot()
 
+def assign_id(input = None) -> int:
+      global xmlRoot
+      
+      allEntries = []
+
+      for entry in xmlRoot.findall("./*"):
+            allEntries.append(int(entry.attrib['n']))
+      print(f"assign_id: Every ID found in the dict.xml document (i.e. the @n attribute): {allEntries}")
+
+      return (max(allEntries) + 1)
+
 #Make sure each element has a number ID:
 for entry in xmlRoot.findall("./*"):
       try:
@@ -248,16 +285,7 @@ for entry in xmlRoot.findall("./*"):
 #other functions make use of this value, so I assign it to a variable here once.
 eEntries = xmlRoot.findall("./*")
 
-def assign_id(input = None) -> int:
-      global xmlRoot
-      
-      allEntries = []
 
-      for entry in xmlRoot.findall("./*"):
-            allEntries.append(int(entry.attrib['n']))
-      print(f"assign_id: Every ID found in the dict.xml document (i.e. the @n attribute): {allEntries}")
-
-      return (max(allEntries) + 1)
 
 
 def add_to_xml(n = assign_id()):
@@ -266,6 +294,7 @@ def add_to_xml(n = assign_id()):
        #Get the strings
        term = entryA.get()
        definition = entryB.get()
+       lang = Languages[language.get()]
 
 
 
@@ -277,7 +306,7 @@ def add_to_xml(n = assign_id()):
        """
 
        #Get the entry XML element
-       entryElem = create_entry(term, definition, n)
+       entryElem = create_entry(term, definition, n, lang)
 
        print(f"Created XML entry {print(entryElem)}")
 
@@ -317,17 +346,8 @@ The function that activates when the user presses "enter" on the two main entry 
   -Hit the return/enter key on the keyboard while focus is on the "Definition" entry box
 """
 def retrieve(entry = None):
-        option = language.get()
-
-        if option == "":
-              messagebox.showerror("Error", "Please restart the application")
-        elif option == "Add":
-              add_to_xml()
-        elif option == "Edit":
-              pass
-        elif option == "Review":
-              pass
-
+        add_to_xml() #Modify later so this isn't just a function that wraps another function
+        
 #Function that activates when hitting the "Replace" button
 def replace(entry = None):
       modify_entry(modifyEntry=True)
@@ -383,60 +403,67 @@ def add_entry(root :ET.Element, entry :ET.Element):
         
         
 
-word = Label(root,text="Enter Word",bg="white",font=('verdana',10,'bold'))
-word.place(x=250,y=23)
+#word = Label(root,text="Enter Word",bg="white",font=('verdana',10,'bold'))
+#word.place(x=250,y=23)
 
 
-#BEGIN COMBOBOX
-"""
-COMBOBOX WISHLIST
 
-Switching to other options in the combo box immediately changes the layout of the program to fit that mode - ESSENTIAL
+##############
 
 """
+OPTIONS WISHLIST:
+
+Language option "Auto" will detect the letters used and change the language accordingly - ESSENTIAL
+
+"""
+frOptions = tk.Frame(root, width=100, height=50, padx=15, pady=10)
+frOptions.grid(column=0, row=0)
+
+langLabel = tk.Label(frOptions, text="Select Language...")
+langLabel.pack()
 
 a = tk.StringVar() 
-language = ttk.Combobox(root, width = 20, textvariable = a, state='readonly',font=('verdana',10,'bold'),) 
+language = ttk.Combobox(frOptions, width = 20, textvariable = a, state='readonly',font=('verdana',10,'bold'),) 
   
 
 
-language['values'] = (
-                         'Add',
-                           'Edit',
-                            'Review'
-                          
-                          ) 
+language['values'] = list(Languages.keys())
   
-language.place(x=380,y=10)
+language.pack(side='left')
 language.current(0) 
 
+##################
 
+frInput = tk.Frame(root)
+frInput.grid(column=0,row=1)
 
-
-
-
-entryA = Entry(root,width=50,borderwidth=2,relief=RIDGE)
-entryA.place(x=250,y=50)
+entryA = Entry(frInput,width=50,borderwidth=2,relief=RIDGE)
+entryA.pack(anchor='n')
 
 entryA.bind("<Return>", retrieve)
 
-entryB = Entry(root,width=50,borderwidth=2,relief=RIDGE)
-entryB.place(x=250,y=75)
+entryB = Entry(frInput,width=50,borderwidth=2,relief=RIDGE)
+entryB.pack(anchor='s')
 
 entryB.bind("<Return>", retrieve)
 
-replace = Button(root, text="Replace", font=('verdana',10,'bold'),cursor="hand2",relief=RIDGE, command=replace)
-replace.place(x=350, y=110)
+############
 
-search = Button(root,text="Enter",font=('verdana',10,'bold'),cursor="hand2",relief=RIDGE,command=retrieve)
-search.place(x=430,y=110)
+frEntryCtrl = tk.Frame(root)
+frEntryCtrl.grid(column=0, row=2)
 
-quit =  Button(root,text="Quit",font=('verdana',10,'bold'),cursor="hand2",relief=RIDGE,command=handle_quitout)
-quit.place(x=510,y=110)
+replace = Button(frEntryCtrl, text="Replace", font=('verdana',10,'bold'),cursor="hand2",relief=RIDGE, command=replace)
+replace.pack(side='left')
+
+search = Button(frEntryCtrl,text="Enter",font=('verdana',10,'bold'),cursor="hand2",relief=RIDGE,command=retrieve)
+search.pack(side='left')
+
+quit =  Button(frEntryCtrl,text="Quit",font=('verdana',10,'bold'),cursor="hand2",relief=RIDGE,command=handle_quitout)
+quit.pack(side='left')
 
 
-meaning = Label(root,text="Meaning",bg="white",font=('verdana',15,'bold'))
-meaning.place(x=230,y=120)
+#meaning = Label(root,text="Meaning",bg="black",font=('verdana',15,'bold'))
+#meaning.grid(column=1,row=0)
 
 """
 output = Text(root,height=8,width=40,borderwidth=2,relief=RIDGE)
@@ -474,7 +501,7 @@ Entering an entry gives some feedback, maybe selecting the new entry so you can 
 """
 
 listFrame = Frame(root, background="white")
-listFrame.place(x=230, y=160)
+listFrame.grid(column=0,row=3)
 
 #An unplaced Treeview which will be used for showing vocab
 tree = ttk.Treeview(listFrame, columns=("Term", "Definition"), show="headings")
@@ -518,6 +545,55 @@ tree.config(yscrollcommand=listScrollbarB.set)
 listScrollbarB.config(command=tree.yview)
 #end listbox scrollbars
 
+def check_filter(eEntry: ET.Element) -> bool:
+      """
+      DEPENDENT OF UPDATE_LISTBOX:
+      This means it runs every time the treeview is updated
+
+      This function returns True or False. 
+
+      It returns True if the Entry matches the filter criteria.
+      These filter criteria are added on as new ideas and tools go into the workflow. 
+      If you create a new filter, you need to create new code here which returns "True" when the condition is met.
+
+      These are the conditions, as listed at the top of the file under #FILTERS
+
+      'in-term' (string)
+      'in-def' (string)
+      'before' (datetime)
+      'after' (datetime)
+      'language' (string)
+      """
+
+      global dictFilters
+
+      #NOTE: all following bools default to "True" so that, when there isn't a filter, the category always returns True
+      boolTermHasSubstring = True
+      if 'in-term' in dictFilters.keys():
+            boolTermHasSubstring = dictFilters['in-term'] in eEntry.find('term').text
+
+      boolDefHasSubstring = True
+      if 'in-def' in dictFilters.keys():
+            boolDefHasSubstring = dictFilters['in-def'] in eEntry.find('entry').text
+
+      boolIsBeforeDatetime = True
+      if 'before' in dictFilters.keys():
+            #Boolean: returns True if the date is 
+            boolIsBeforeDatetime = datetime.fromisoformat(eEntry.attrib['creationDate']) <= dictFilters['before']
+
+      boolIsAfterDatetime = True
+      if 'after' in dictFilters.keys():
+            boolIsAfterDatetime = datetime.fromisoformat(eEntry.attrib['creationDate']) >= dictFilters['after']
+
+      boolIsLanguage = True
+      if 'language' in dictFilters.keys():
+            boolIsLanguage = eEntry.attrib['language'] == dictFilters['language']
+
+      return (boolTermHasSubstring & boolDefHasSubstring & boolIsBeforeDatetime & boolIsAfterDatetime & boolIsLanguage)
+
+      
+
+
 def update_listbox():
       #listbox.delete(0, (listbox.size() - 1)) #Before updating, delete the old values
 
@@ -534,24 +610,26 @@ def update_listbox():
 
       print("update_listbox: Sorting the entries:")
 
+      #Go through each entry and add it to the treeview
       for eEntry in eEntries:
-            print(f"update_listbox: Index of entry = {eEntry.attrib['n']}")
-            #Get the term, then check if it needs to be blocked out
-            term = eEntry.find("term").text
-            if HIDE_TERMS.get():
-                  term = "**********"
-            
+            if check_filter(eEntry):
+                  print(f"update_listbox: Index of entry = {eEntry.attrib['n']}")
+                  #Get the term, then check if it needs to be blocked out
+                  term = eEntry.find("term").text
+                  if HIDE_TERMS.get():
+                        term = "**********"
+                  
 
-            definition = eEntry.find("def").text
-            if HIDE_DEFS.get():
-                  definition = "**********"
-            #defWidth = tree.column("Definition", option="width")
-            #defWidth = int(defWidth / 16)
-            #definition = textwrap.fill(definition, defWidth)
+                  definition = eEntry.find("def").text
+                  if HIDE_DEFS.get():
+                        definition = "**********"
+                  #defWidth = tree.column("Definition", option="width")
+                  #defWidth = int(defWidth / 16)
+                  #definition = textwrap.fill(definition, defWidth)
 
-            fTerm = f"Term: {term}; Def: {definition}"
-            #listbox.insert(tk.END, fTerm)
-            tree.insert('', "end", text=eEntry.attrib['n'], values=(term, definition))
+                  fTerm = f"Term: {term}; Def: {definition}"
+                  #listbox.insert(tk.END, fTerm)
+                  tree.insert('', "end", text=eEntry.attrib['n'], values=(term, definition))
       #Might not be a good idea to update every two seconds,
       #it resets the scrollbar every time
       #root.after(2000, update_listbox)
@@ -559,6 +637,38 @@ def update_listbox():
 def print_xml():
        for entry in eEntries:
               print(f"Term: {entry.find("term").text}, Def: {entry.find("def").text}")
+
+
+#     MOVE THIS UP!!!!
+def entryToXml(entry: tk.Entry):
+      """
+      Return the XML node that's the source of an entry in the treeview
+      """
+      global tree
+
+      num = tree.item(entry)['text']
+      
+      if DEBUG_MODE:
+            print(f"{num} is the number of the entry")
+            print(f"./*[@n='{num}']")
+            for entry in xmlRoot.findall("./*"):
+                  print(entry.attrib)
+      
+      entryElem = xmlRoot.findall(f"./*[@n='{num}']")
+      #append a [0] in case there is an issue and multiple have the same ID
+      entryElem = entryElem[0]
+
+      if DEBUG_MODE: 
+            print(entryElem)
+
+            print(f"entryToXml: xmlRoot is {type(xmlRoot)}; entryElem is {type(entryElem[0])} and size {len(entryElem)}")
+
+      return (entryElem)
+
+def indexOfEntry(entry: tk.Entry):
+      global tree
+      return tree.index(entry)
+
 
 #Deletes the selected item, unless "modifyEntry" is set to True, in which case it replaces an earlier entry
 def modify_entry(modifyEntry = False):
@@ -572,21 +682,7 @@ def modify_entry(modifyEntry = False):
       oldID = 0
 
       for item in tree.selection():
-            i = tree.index(item) + 1
-            print(f"Index of deleted item is {i}")
-
-            num = tree.item(item)['text']
-            
-            print(f"{num} is the number of the entry")
-            print(f"./*[@n='{num}']")
-            for entry in xmlRoot.findall("./*"):
-                  print(entry.attrib)
-            
-            entryElem = xmlRoot.findall(f"./*[@n='{num}']")
-            entryElem = entryElem[0]
-            print(entryElem)
-
-            print(f"xmlRoot is {type(xmlRoot)}; entryElem is {type(entryElem[0])} and size {len(entryElem)}")
+            entryElem = entryToXml(item)
 
             oldID = int(entryElem.attrib['n'])
             xmlRoot.remove(entryElem)
@@ -669,6 +765,8 @@ def activate_delete(event):
 #Get the text from the selection in the treeview. Activates in some unexpected
 #circumstances: might be good to read up on what actually causes the "select" to trigger
 def tree_select(event):
+
+      global language
       items = tree.selection()
 
       #NOTE: these next two lines necessary. If I delete an item, then there is nothing selected but this function runs anyway. Trying to access "items[0]" below
@@ -681,6 +779,26 @@ def tree_select(event):
       replace_text(entryA, selected["values"][0])
       replace_text(entryB, selected['values'][1])
 
+      ####This section: get the index we want to set for the combobox
+      entryXml = entryToXml(items[0])
+
+      #get the language attribute:
+      lang = entryXml.attrib['language']
+
+      try:
+            index = list(Languages.values()).index(lang)
+      except (ValueError):
+            print(f"FUNCTION tree_select: Value Error. Language ({lang}) in the XML entry doesn't match any values set in the program's defaults (see beginning of program)")
+            index = 0
+
+      #set the combo box language
+      language.set(list(Languages.keys())[index])
+
+      if DEBUG_MODE:
+            print(f"Filter Lang Combobox: {filterLangs.get()} and its type: {type(filterLangs.get())}")
+
+
+
 def replace_text(entry :tk.Entry, text :str):
       entry.delete(0, len(entry.get()))
       entry.insert(0, text)
@@ -688,12 +806,87 @@ def replace_text(entry :tk.Entry, text :str):
 def deactivate_delete(event):
        deleteEntry['stat'] = tk.DISABLED
 
+
+
+
 tree.bind("<FocusIn>", activate_delete)
 tree.bind("<<TreeviewSelect>>", tree_select)
 tree.bind("<FocusOut>", deactivate_delete)
 
 root.bind("<Mod1-Key-z>", control_z)
 root.bind(SAVE_CHANGES_SHORTCUT, save_changes)
+
+"""
+Filters
+
+Add filters to the treeview.
+
+Also includes a button linking to an "Add to list" dialogue. Should also have a shortcut for adding all of today's vocab to one list and giving it a name
+
+Also needs a button which clears filters on the treeview and all the fields
+
+The following are planned:
+- Date: Fromats: 1/1/2000 | 01/01/2000 | 2000-01-01 | 2000-1-1
+- Language
+-
+
+Date Format: 1 box for month and day, another for year.
+
+MY NOTES:
+
+The ideal scenario is for the update_Listbox method to take the filters into account on every item. Update listbox works directly with the
+XML, so keep that in mind. What's the easiest algorithm? Toughest thing to check is a range of dates, but that shouldn't be a problem with datetime.
+
+WISHLIST:
+The currently active filters are shown onscreen at all times - ESSENTIAL
+"""
+
+from datetime import datetime
+
+def parse_date(entryXml: ET.Element) -> datetime:
+      """
+      Returns a date as a datetime object
+      """
+
+      return datetime.strptime(entryXml.attrib['creationDate'], "%Y%m%d")
+
+
+def apply_filters():
+      #must use global keyword so this function is able to modify the original variable
+      global dictFilters
+
+      #If the combobox is empty, we signal that we need to delete the filter
+      if (filterLangs.get() == ''): 
+            try: 
+                  del dictFilters['language']
+            except(KeyError):
+                  print("Removing filter...no filter found. Continuing...")
+      else:
+            try:
+                  #Get the language in its XML-ready version (on the right side of the assignment below), since the Combobox values aren't ever the same as the ones in the XML
+                  dictFilters['language'] = Languages[filterLangs.get()]            
+            except(KeyError):
+                  messagebox.showerror("KeyError", f"Please select or enter a valid language into the combo box. Valid languages include: {(Languages.keys())}")
+
+      update_listbox()
+
+
+
+#set up the Frame to the right
+frFilters = tk.Frame(root)
+frFilters.grid(column=1, row=1)
+
+filterLangs = ttk.Combobox(frFilters)
+filterLangs.pack(anchor="n")
+filterLangs['values'] = list(Languages.keys())
+
+filterApply = tk.Button(frFilters, text="Apply Filters", command=apply_filters)
+filterApply.pack()
+
+
+
+
+
 
 """
 !!!
