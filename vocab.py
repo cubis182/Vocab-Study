@@ -75,6 +75,8 @@ Ctrl + Z:
 Add images using the file browser to an entry - ESSENTIAL
 Add images to an entry using drag and drop - NICE TO HAVE
 Store the language of each entry - ESSENTIAL
+Remove filters - ESSENTIAL
+Show current filters - NICE TO HAVE
 Optional "Are you sure you want to delete?" dialogue on deleting an entry
 Flashcard mode: opens up new window with just the word, based on the list in the current view mode (see below) - NICE TO HAVE
 Combo box toggles view modes - ESSENTIAL
