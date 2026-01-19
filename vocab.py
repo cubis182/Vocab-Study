@@ -69,7 +69,7 @@ Wishlist Format:
 -    NON-ESSENTIAL: The least important. Neither a big quality of life feature nor essential.
 
 Ctrl + Z:
-- How many steps to save? Every call to update_listbox would have to save the current xmlRoot somewhere. I guess it would be easy
+- How many steps to save? Every call to update_treeview would have to save the current xmlRoot somewhere. I guess it would be easy
 - 
 
 Add images using the file browser to an entry - ESSENTIAL
@@ -79,7 +79,6 @@ Remove filters - ESSENTIAL
 Show current filters - NICE TO HAVE
 Optional "Are you sure you want to delete?" dialogue on deleting an entry
 Flashcard mode: opens up new window with just the word, based on the list in the current view mode (see below) - NICE TO HAVE
-Combo box toggles view modes - ESSENTIAL
 Each view mode has the ability to activate or deactivate certain buttons and features - ESSENTIAL
 Customizable fonts - NICE TO HAVE
 ESSENTIAL VIEW MODES:
@@ -89,8 +88,7 @@ ESSENTIAL VIEW MODES:
 NICE TO HAVE VIEW MODES:
 - Sort by Hardest (the most missed in Flashcard mode - depends on flashcard mode existing)
 
-Rename everything referencing listboxes to treeview - ESSENTIAL
-Give an option to 
+
 Don't bother to ask to save on quit if the data hasn't been changed - NON-ESSENTIAL
 Have a way of showing shortcuts on buttons and tooltips - NON-ESSENTIAL
 Highlight required fields in some way - NICE TO HAVE
@@ -175,7 +173,7 @@ class Undo():
                   print(f"xmlRoot variable: {xmlRoot}. Undo list size: {len(self.array)}. xmlRoot size: {len(xmlRoot.findall("./*"))}. Undo size: {len(self.array[-2].findall("./*"))}")
 
                   self.array.pop()
-                  update_listbox()
+                  update_treeview()
             except IndexError:
                   messagebox.showerror("Error! No progress to undo.")
 
@@ -334,14 +332,14 @@ def click_term():
             HIDE_TERMS.set(False)
       else:
             HIDE_TERMS.set(True)
-      update_listbox()
+      update_treeview()
 
 def click_definition():
       if (HIDE_DEFS.get()):
             HIDE_DEFS.set(False)
       else:
             HIDE_DEFS.set(True)
-      update_listbox()
+      update_treeview()
   
 """
 The function that activates when the user presses "enter" on the two main entry boxes. Activated one of three ways:
@@ -383,7 +381,7 @@ def save_changes(event = None):
             try:
                   eTree.write(dictFile) #Write over the XML document with the modified tree
                   print("Save success!")
-                  update_listbox()
+                  update_treeview()
             except FileNotFoundError:
                   print("Error! Could not find 'dict.xml' to write to.")
       else:
@@ -400,7 +398,7 @@ def add_entry(root :ET.Element, entry :ET.Element):
     #Add entry to the root
     root.append(entry)
 
-    update_listbox()
+    update_treeview()
 
     return root
 
@@ -477,7 +475,7 @@ view = Text(root,height=8,width=40,borderwidth=2,relief=RIDGE)
 view.place(x=460,y=160)
 """
 
-#BEGIN LISTBOX
+#BEGIN TREEVIEW
 
 """
 ONGOING BUGS/ISSUES:
@@ -486,7 +484,7 @@ after the first or second items are deleted
 - There is no way I know of to get text wrapping done. Making style = ttk.Style(), style.configure("StyleName", rowheight = 40), and tree.config(style = "StyleName").
      However, this changes all the rows.
 
-LISTBOX / TREEVIEW WISHLIST:
+TREEVIEW WISHLIST:
 
 MAKE THE DEFINITION BOX BIGGER!!!!! THAT WAY, YOU CAN SEE A FULL TERM BY CLICKING ON IT. LET USERS CONFIGURE THE SIZE AS WELL
 Clicking on a column adds a "Column Settings" cascading menu at the top - ESSENTIAL
@@ -535,7 +533,7 @@ tree.grid(column=0, row=0)
 
 
 
-#start listbox scrollbars
+#start treeview scrollbars
 listScrollbarA = Scrollbar(listFrame, orient=tk.HORIZONTAL)
 listScrollbarA.grid(row=1, column=0, sticky="we")
 
@@ -547,11 +545,11 @@ listScrollbarA.config(command=tree.xview)
 
 tree.config(yscrollcommand=listScrollbarB.set)
 listScrollbarB.config(command=tree.yview)
-#end listbox scrollbars
+#end treeview scrollbars
 
 def check_filter(eEntry: ET.Element) -> bool:
       """
-      DEPENDENT OF UPDATE_LISTBOX:
+      DEPENDENT OF update_treeview:
       This means it runs every time the treeview is updated
 
       This function returns True or False. 
@@ -598,7 +596,7 @@ def check_filter(eEntry: ET.Element) -> bool:
       
 
 
-def update_listbox():
+def update_treeview():
       #listbox.delete(0, (listbox.size() - 1)) #Before updating, delete the old values
 
       #delete the old items
@@ -612,12 +610,12 @@ def update_listbox():
       #organize the list of elements by ID
       eEntries = sorted(xmlRoot.findall("./*"), key=lambda entry: int(entry.attrib['n']))
 
-      print("update_listbox: Sorting the entries:")
+      print("update_treeview: Sorting the entries:")
 
       #Go through each entry and add it to the treeview
       for eEntry in eEntries:
             if check_filter(eEntry):
-                  print(f"update_listbox: Index of entry = {eEntry.attrib['n']}")
+                  print(f"update_treeview: Index of entry = {eEntry.attrib['n']}")
                   #Get the term, then check if it needs to be blocked out
                   term = eEntry.find("term").text
                   if HIDE_TERMS.get():
@@ -636,7 +634,7 @@ def update_listbox():
                   tree.insert('', "end", text=eEntry.attrib['n'], values=(term, definition))
       #Might not be a good idea to update every two seconds,
       #it resets the scrollbar every time
-      #root.after(2000, update_listbox)
+      #root.after(2000, update_treeview)
 
 def print_xml():
        for entry in eEntries:
@@ -698,7 +696,7 @@ def modify_entry(modifyEntry = False):
       #Final: use "tree.yview_moveto()" to get to the right spot after every delete. It's a float from 0.0f to 1.0f. 
       #How to get there: We need this info to figure out where to scroll: # of entries, and height of entries. Height of entries is harder
       #
-      update_listbox()
+      update_treeview()
 
 
 
@@ -709,15 +707,39 @@ deleteEntry.grid(column=0, row=2)
 
 #END LIST BOX
 
+"""
+PREFERENCES WINDOW
+
+This declares a separate window with preferences. 
+
+"""
+
+def open_preferences():
+      """
+      Command that runs when the preferences are opened.
+      Opens a new window"""
+
+      preferences = Toplevel(root)
+
+      #Structure:
+      #This window needs a list of categories on the left,
+      #and 
+
+
+######START MENU BAR########
+
 #Menu bar at top
 menubar = Menu(root)
 fileMenu = Menu(root, tearoff=0)
 
 #save button
-fileMenu.add_command(label="Save List")
+fileMenu.add_command(label="Save List", command=save_changes)
 #add tooltip to save button
 
 fileMenu.add_checkbutton(label="Debug Mode", variable=DEBUG_MODE, onvalue=True, offvalue=False)
+
+fileMenu.add_command(label="Preferences...", command=open_preferences)
+
 menubar.add_cascade(label="File", menu=fileMenu)
 
 def __debug_mode__():
@@ -753,6 +775,8 @@ def check_debug():
 
 #Add menubar to the root
 root.config(menu=menubar)
+
+######END MENUBAR######
 
 
 """
@@ -838,12 +862,15 @@ Date Format: 1 box for month and day, another for year.
 
 MY NOTES:
 
-The ideal scenario is for the update_Listbox method to take the filters into account on every item. Update listbox works directly with the
+The ideal scenario is for the update_treeview method to take the filters into account on every item. update_treeview works directly with the
 XML, so keep that in mind. What's the easiest algorithm? Toughest thing to check is a range of dates, but that shouldn't be a problem with datetime.
 
 WISHLIST:
 The currently active filters are shown onscreen at all times - ESSENTIAL
 """
+
+#This string is the value in the Combobox the user selects to clear all filters from the list.
+CLEAR_FILTERS = 'Clear filters'
 
 from datetime import datetime
 
@@ -865,6 +892,8 @@ def apply_filters():
                   del dictFilters['language']
             except(KeyError):
                   print("Removing filter...no filter found. Continuing...")
+      elif filterLangs.get() == CLEAR_FILTERS:
+            dictFilters = {}
       else:
             try:
                   #Get the language in its XML-ready version (on the right side of the assignment below), since the Combobox values aren't ever the same as the ones in the XML
@@ -872,8 +901,7 @@ def apply_filters():
             except(KeyError):
                   messagebox.showerror("KeyError", f"Please select or enter a valid language into the combo box. Valid languages include: {(Languages.keys())}")
 
-      update_listbox()
-
+      update_treeview()
 
 
 #set up the Frame to the right
@@ -882,7 +910,9 @@ frFilters.grid(column=1, row=1)
 
 filterLangs = ttk.Combobox(frFilters)
 filterLangs.pack(anchor="n")
-filterLangs['values'] = list(Languages.keys())
+filtersList = list(Languages.keys())
+filtersList.append(CLEAR_FILTERS)
+filterLangs['values'] = filtersList
 
 filterApply = tk.Button(frFilters, text="Apply Filters", command=apply_filters)
 filterApply.pack()
@@ -903,6 +933,23 @@ check_debug()
 # Register the on_closing function to be called when the WM_DELETE_WINDOW protocol is invoked
 root.protocol("WM_DELETE_WINDOW", on_closing)
 
-update_listbox() #adds the terms to the listbox based on the xmlRoot
+update_treeview() #adds the terms to the treeview based on the xmlRoot
+
+"""
+
+IMAGE SELECTION
+
+Use the tkinter.filedialog to select an image file. Remember to implement a solution
+for when I'm using the same flashcards on a different computer, as it will attempt
+to resolve paths the other computer doesn't have.
+
+Sub-features I plan to add:
+Drag and drop a file into the window to open a dialogue box
+Drag and drop the photo directly onto an item in the treeview to add it without any dialog
+Right-click on a term and add the image from a context menu
+
+"""
+
+
 
 root.mainloop()
