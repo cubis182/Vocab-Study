@@ -249,6 +249,8 @@ lTerms = ET.Element("root", attrib = {"xmlns:xsi":"http://www.w3.org/2001/XMLSch
 
 #Initialize a list of terms from a file (file must be backwards compatible; use XML?)
 from pathlib import Path
+#using pathlib because the file is in a different location
+#if the program gets packaged for use on other systems
 dictFile = Path(__file__).resolve().with_name("dict.xml")
 
 if (DEBUG_MODE):
