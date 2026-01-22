@@ -1,4 +1,5 @@
 from tkinter import *
+import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from PIL import ImageTk, Image
@@ -1033,7 +1034,7 @@ treeview_entry['values'] is currently a
 """
 
 
-def create_flashcard(images: list[ImageTk], term: str, definition: str) -> tk.Frame:
+def create_flashcard(images: list, term: str, definition: str) -> tk.Frame:
     """
     This function displays a Toplevel window with a flashcard in it.
     The flashcard data required includes any images associated with it,
@@ -1058,7 +1059,7 @@ def open_flashcard_window() -> Toplevel:
       - A "Go!" button for studying.
     """
     win: Toplevel = Toplevel(root)
-    win.title: str = "Flashcard Mode"
+    win.title = "Flashcard Mode"
 
     # ADD COMBO BOXES AND FUNCTIONALITY HERE
 
