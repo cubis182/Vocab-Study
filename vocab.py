@@ -133,10 +133,10 @@ class Entry:
 
 # suggested in the Tkinter Cookbook on that one blog, so I'm using a class to initialize a new window
 """
-class SelectTerms(tk.Toplevel):
+class SelectTerms(Toplevel):
       def __init__(self):
             self.
-            self.list = tk.Listbox(self)
+            self.list = Listbox(self)
             self.list.grid(column=0, row=1)
 """
 
@@ -235,15 +235,15 @@ def create_entry(term: str, definition: str, num, lang=UNSPECIFIED_LANG) -> ET.E
 # BEGIN TK ROOT
 
 
-root = tk.Tk()
+root = Tk()
 root.title("Subito")
 root.geometry("900x500")
 root["bg"] = "white"
 
-DEBUG_MODE = tk.BooleanVar()  # When true, extra debug features are enabled
-HIDE_TERMS = tk.BooleanVar()  # When true, hide all the terms in the left column (terms)
+DEBUG_MODE = BooleanVar()  # When true, extra debug features are enabled
+HIDE_TERMS = BooleanVar()  # When true, hide all the terms in the left column (terms)
 HIDE_DEFS = (
-    tk.BooleanVar()
+    BooleanVar()
 )  # When true, hide all the terms in the right column (definitions)
 
 # an empty root which will eventually be used to override the original document
@@ -438,13 +438,13 @@ OPTIONS WISHLIST:
 Language option "Auto" will detect the letters used and change the language accordingly - ESSENTIAL
 
 """
-frOptions = tk.Frame(root, width=100, height=50, padx=15, pady=10)
+frOptions = Frame(root, width=100, height=50, padx=15, pady=10)
 frOptions.grid(column=0, row=0)
 
-langLabel = tk.Label(frOptions, text="Select Language...")
+langLabel = Label(frOptions, text="Select Language...")
 langLabel.pack()
 
-a = tk.StringVar()
+a = StringVar()
 language = ttk.Combobox(
     frOptions,
     width=20,
@@ -461,7 +461,7 @@ language.current(0)
 
 ##################
 
-frInput = tk.Frame(root)
+frInput = Frame(root)
 frInput.grid(column=0, row=1)
 
 entryA = Entry(frInput, width=50, borderwidth=2, relief=RIDGE)
@@ -476,7 +476,7 @@ entryB.bind("<Return>", retrieve)
 
 ############
 
-frEntryCtrl = tk.Frame(root)
+frEntryCtrl = Frame(root)
 frEntryCtrl.grid(column=0, row=2)
 
 replace = Button(
@@ -525,9 +525,9 @@ view.place(x=460,y=160)
 
 """
 ONGOING BUGS/ISSUES:
-- Delete button sometimes runs into an "index out of range" error when deleting multiple items at once, but then sucessfully finishes deleting
+- Delete button sometimes runs into an "index out of range" error when deleting multiple items at once, but then successfully finishes deleting
 after the first or second items are deleted
-- There is no way I know of to get text wrapping done. Making style = ttk.Style(), style.configure("StyleName", rowheight = 40), and tree.config(style = "StyleName").
+- There is no way I know of to get text wrapping done. Making style = tStyle(), style.configure("StyleName", rowheight = 40), and tree.config(style = "StyleName").
      However, this changes all the rows.
 
 TREEVIEW WISHLIST:
@@ -583,10 +583,10 @@ tree.grid(column=0, row=0)
 
 
 # start treeview scrollbars
-listScrollbarA = Scrollbar(listFrame, orient=tk.HORIZONTAL)
+listScrollbarA = Scrollbar(listFrame, orient=HORIZONTAL)
 listScrollbarA.grid(row=1, column=0, sticky="we")
 
-listScrollbarB = Scrollbar(listFrame, orient=tk.VERTICAL)
+listScrollbarB = Scrollbar(listFrame, orient=VERTICAL)
 listScrollbarB.grid(row=0, column=1, sticky="ns")
 
 tree.config(xscrollcommand=listScrollbarA.set)
@@ -689,7 +689,7 @@ def update_treeview():
             # definition = textwrap.fill(definition, defWidth)
 
             fTerm = f"Term: {term}; Def: {definition}"
-            # listbox.insert(tk.END, fTerm)
+            # listbox.insert(END, fTerm)
             tree.insert("", "end", text=eEntry.attrib["n"], values=(term, definition))
     # Might not be a good idea to update every two seconds,
     # it resets the scrollbar every time
@@ -702,7 +702,7 @@ def print_xml():
 
 
 #     MOVE THIS UP!!!!
-def entryToXml(entry: tk.Entry):
+def entryToXml(entry: Entry):
     """
     Return the XML node that's the source of an entry in the treeview
     """
@@ -730,7 +730,7 @@ def entryToXml(entry: tk.Entry):
     return entryElem
 
 
-def indexOfEntry(entry: tk.Entry):
+def indexOfEntry(entry: Entry):
     global tree
     return tree.index(entry)
 
@@ -762,7 +762,7 @@ def modify_entry(modifyEntry=False):
     update_treeview()
 
 
-deleteEntry = Button(listFrame, text="Delete", state=tk.DISABLED, command=modify_entry)
+deleteEntry = Button(listFrame, text="Delete", state=DISABLED, command=modify_entry)
 
 deleteEntry.grid(column=0, row=2)
 
@@ -854,7 +854,7 @@ Add:
 
 
 def activate_delete(event):
-    deleteEntry["stat"] = tk.ACTIVE
+    deleteEntry["stat"] = ACTIVE
 
 
 # Get the text from the selection in the treeview. Activates in some unexpected
@@ -897,13 +897,13 @@ def tree_select(event):
         )
 
 
-def replace_text(entry: tk.Entry, text: str):
+def replace_text(entry: Entry, text: str):
     entry.delete(0, len(entry.get()))
     entry.insert(0, text)
 
 
 def deactivate_delete(event):
-    deleteEntry["stat"] = tk.DISABLED
+    deleteEntry["stat"] = DISABLED
 
 
 tree.bind("<FocusIn>", activate_delete)
@@ -978,7 +978,7 @@ def apply_filters():
 
 
 # set up the Frame to the right
-frFilters = tk.Frame(root)
+frFilters = Frame(root)
 frFilters.grid(column=1, row=1)
 
 filterLangs = ttk.Combobox(frFilters)
@@ -987,7 +987,7 @@ filtersList = list(Languages.keys())
 filtersList.append(CLEAR_FILTERS)
 filterLangs["values"] = filtersList
 
-filterApply = tk.Button(frFilters, text="Apply Filters", command=apply_filters)
+filterApply = Button(frFilters, text="Apply Filters", command=apply_filters)
 filterApply.pack()
 
 
@@ -1034,7 +1034,7 @@ treeview_entry['values'] is currently a
 """
 
 
-def create_flashcard(images: list, term: str, definition: str) -> tk.Frame:
+def create_flashcard(images: list[ImageTk], term: str, definition: str) -> tk.Frame:
     """
     This function displays a Toplevel window with a flashcard in it.
     The flashcard data required includes any images associated with it,
